@@ -82,7 +82,7 @@ export const getChannel = base
   .use(requiredAuthMiddleware)
   .use(requiredWorkspaceMiddleware)
   .route({
-    path: "/channel",
+    path: "/channel/:channelId",
     method: "GET",
     summary: "Get a channel",
     tags: ["channel"],

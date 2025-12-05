@@ -16,6 +16,7 @@ const MessageList = ({ channelId }: { channelId: string }) => {
   const [newMessages, SetNewMessages] = useState(false);
   const LastItemRef = useRef<string | undefined>(undefined);
   const initialOptins = orpc.messages.list.infiniteOptions({
+    queryKey: ["message.list", channelId],
     input: (pageParam: string | undefined) => ({
       channelId: channelId,
       cursor: pageParam,
@@ -70,12 +71,12 @@ const MessageList = ({ channelId }: { channelId: string }) => {
       }
     };
 
-const onImageLoaded = (e: Event) => {
-    const target = e.target as Element | null;
-    if (target?.tagName === "IMG") {
-      scrollToBottonIfNeeded();
-    }
-  };
+    const onImageLoaded = (e: Event) => {
+      const target = e.target as Element | null;
+      if (target?.tagName === "IMG") {
+        scrollToBottonIfNeeded();
+      }
+    };
     el.addEventListener("load", onImageLoaded, true);
 
     const resizeObserver = new ResizeObserver(() => {

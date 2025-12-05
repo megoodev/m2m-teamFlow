@@ -3,17 +3,15 @@ import MessageItem from "./MessageItem";
 import { orpc } from "@/lib/orpc";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Mail } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { ChevronDown, Loader2, Mail } from "lucide-react";
+
+import EmptyState from "@/components/general/EmptyState";
 
 const MessageList = ({ channelId }: { channelId: string }) => {
   const [hasinitialedScrolled, setHasInitialScrolled] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const buttonRef = useRef<HTMLDivElement | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
   const [isAtButton, setIsAtButton] = useState(false);
   const [newMessages, SetNewMessages] = useState(false);
   const LastItemRef = useRef<string | undefined>(undefined);
@@ -35,13 +33,10 @@ const MessageList = ({ channelId }: { channelId: string }) => {
 
   const {
     data,
-    isEnabled,
-    isPending,
     isFetching,
     fetchNextPage,
     hasNextPage,
-    isFetched,
-    isLoading,
+    isFetchingNextPage,
     error,
   } = useInfiniteQuery({
     ...initialOptins,
@@ -56,15 +51,54 @@ const MessageList = ({ channelId }: { channelId: string }) => {
   useEffect(() => {
     if (!hasinitialedScrolled && data?.pages.length) {
       const el = scrollRef.current;
-      if (el !== null) {
+      if (el) {
         el.scrollTop = el.scrollHeight;
 
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setHasInitialScrolled(true);
         setIsAtButton(true);
       }
     }
   }, [hasinitialedScrolled, data]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const scrollToBottonIfNeeded = () => {
+      if (isAtButton && hasinitialedScrolled) {
+        el.scrollTop = el.scrollHeight;
+      }
+    };
+
+const onImageLoaded = (e: Event) => {
+    const target = e.target as Element | null;
+    if (target?.tagName === "IMG") {
+      scrollToBottonIfNeeded();
+    }
+  };
+    el.addEventListener("load", onImageLoaded, true);
+
+    const resizeObserver = new ResizeObserver(() => {
+      scrollToBottonIfNeeded();
+    });
+    resizeObserver.observe(el);
+
+    const mutationObServer = new MutationObserver(() => {
+      scrollToBottonIfNeeded();
+    });
+    mutationObServer.observe(el, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+    return () => {
+      resizeObserver.disconnect();
+      el.removeEventListener("load", onImageLoaded, true);
+      mutationObServer.disconnect();
+    };
+  }, [isAtButton, hasinitialedScrolled, items.length]);
+
   const isNearButton = (el: HTMLDivElement) =>
     el.scrollHeight - el.scrollTop - el.clientHeight <= 80;
 
@@ -83,7 +117,6 @@ const MessageList = ({ channelId }: { channelId: string }) => {
   }
   useEffect(() => {
     if (!items.length) return;
-
     const lastId = items[items.length - 1].id;
     const prevLastId = LastItemRef.current;
     const el = scrollRef.current;
@@ -92,7 +125,6 @@ const MessageList = ({ channelId }: { channelId: string }) => {
         requestAnimationFrame(() => {
           el.scrollTop = el.scrollHeight;
         });
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         SetNewMessages(false);
         setIsAtButton(true);
       } else {
@@ -100,7 +132,8 @@ const MessageList = ({ channelId }: { channelId: string }) => {
       }
     }
     LastItemRef.current = lastId;
-  }, [items]);
+  }, [items.length]);
+
   function scrollToBottom() {
     const el = scrollRef.current;
     if (!el) return;
@@ -109,35 +142,58 @@ const MessageList = ({ channelId }: { channelId: string }) => {
     SetNewMessages(false);
     setIsAtButton(true);
   }
+
+  const empty = !error && !isFetching && items.length === 0;
   return (
     <div className="relative h-full w-full">
       <div
         className="h-full overflow-y-auto px-4 "
         ref={scrollRef}
         onScroll={handleScroll}>
-        {items?.map((message) => (
-          <MessageItem message={message} key={message.id} />
-        ))}
+        {empty ? (
+          <div className="flex items-center justify-center p-5 w-full h-full">
+            <EmptyState
+              title="No messages yet!"
+              buttonText="Send a message"
+              href="#"
+              description="Start the converation by sending the first message"
+            />
+          </div>
+        ) : (
+          items.map((message) => (
+            <MessageItem message={message} key={message.id} />
+          ))
+        )}
       </div>
+      <div ref={bottomRef}></div>
       {newMessages && !isAtButton ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              onClick={scrollToBottom}
-              size="sm"
-              variant='secondary'
-              className="absolute bottom-4 right-8 size-10 cursor-pointer rounded-full">
-              <ChevronDown className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent className="invert  border-accent-foreground" side="left">
-            <p className="flex items-center">
-              <Mail className="size-4 mr-1" /> New Messages
-            </p>
-          </TooltipContent>
-        </Tooltip>
+        <Button
+          type="button"
+          onClick={scrollToBottom}
+          size="sm"
+          className="absolute bottom-4 right-8  cursor-pointer">
+          <Mail className="size-4 mr-1" />
+          New Message!
+        </Button>
       ) : null}
+      {isFetchingNextPage && (
+        <div className="pointer-events-none absolute top-0 left-0  right-0 flex items-center justify-center py-2">
+          <div className="flex gap-2 items-center rounded-md bg-linear-to-b from-white/80 to-transparent dark:from-neutral-900/80 backdrop-blur px-5">
+            <Loader2 className="animate-spin size-4 text-muted-foreground" />
+            <span>Loadin previos messages...</span>
+          </div>
+        </div>
+      )}
+      {!newMessages && !isAtButton && (
+        <Button
+          onClick={scrollToBottom}
+          className="absolute bottom-4 right-5 z-20  rounded-full hover:shadow-xl transition-all duration-200"
+          size="sm"
+          type="button">
+          <ChevronDown className="size-4" />
+        </Button>
+      )}
+      <div ref={bottomRef}></div>
     </div>
   );
 };

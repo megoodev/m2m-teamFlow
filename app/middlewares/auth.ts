@@ -9,7 +9,7 @@ export const requiredAuthMiddleware = base
       user?: KindeUser<Record<string, unknown>>;
     };
   }>()
-  .middleware(async ({ context, next, errors }) => {
+  .middleware(async ({ context, next }) => {
     const session = context.session ?? (await getSession());
     if (!session.user) {
       return redirect("/api/auth/login");

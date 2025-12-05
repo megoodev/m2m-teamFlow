@@ -23,6 +23,7 @@ export const createMessage = base
         id: input.channelId,
       },
     });
+    
     if (!channel) {
       throw errors.FORBIDDEN();
     }

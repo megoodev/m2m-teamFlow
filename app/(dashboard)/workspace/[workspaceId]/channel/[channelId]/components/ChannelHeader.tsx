@@ -7,6 +7,7 @@ const ChannelHeader = ({title}: ChannelHeaderType) => {
     <div className="flex items-center justify-between h-14 w-full  px-4 border-b">
       <h1 className="">£ {title}</h1>
       <div className="flex items-center space-x-2">
+        
         <ThemeToggle />
       </div>
     </div>

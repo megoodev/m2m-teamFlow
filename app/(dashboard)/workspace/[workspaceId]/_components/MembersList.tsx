@@ -1,5 +1,6 @@
 "use client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { getAvatar } from "@/lib/git-avatar";
 import { orpc } from "@/lib/orpc";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import Image from "next/image";
@@ -14,7 +15,7 @@ const MembersList = () => {
         <div className="flex gap-2 items-center py-2" key={member.id}>
           <Avatar className="relative">
             <Image
-              src={member.picture!}
+              src={getAvatar(member?.picture, member.email!)}
               alt="Member Image"
               fill
               className="object-cover"

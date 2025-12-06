@@ -1,5 +1,6 @@
 import SafeContent from "@/components/rich-text-editor/SafeContent";
 import { Message } from "@/lib/generated/prisma/client";
+import { getAvatar } from "@/lib/git-avatar";
 import Image from "next/image";
 
 interface MessageItemProps {
@@ -9,7 +10,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
   return (
     <div className="flex space-x-3 relative p-3 rounded-lg group hover:bg-muted/50 min-w-0">
       <Image
-        src={"https://avatars.githubusercontent.com/u/207575075?v=4"}
+        src={getAvatar(message.AuthorAvatar, message.authorEmail!)}
         className="size-8 rounded-lg"
         height={32}
         width={32}
